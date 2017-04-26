@@ -3,11 +3,9 @@ package com.amitlab.beaconreceiveralt;
 import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.AsyncTask;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
@@ -17,11 +15,18 @@ import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
+import org.apache.http.client.HttpClient;
+import org.apache.http.HttpResponse;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class MainActivity extends AppCompatActivity implements BeaconConsumer{
 
@@ -73,6 +78,10 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
             public void didExitRegion(Region region) {
                 logToDisplay("I no longer see a beacon");
                 beaconsSeen.clear();
+
+                // Call API exit method
+                String exit_path = "https://hpf-usersprofileapp.azurewebsites.net/api/DeviceExited?code=Q5hypKigjgiW8dwPEtJnRhTEUzEJgV5gVtWemLs8dgI6pRzvjSAUrw==";
+                new ExecuteTask().execute("exit", exit_path);
             }
 
             @Override
@@ -101,6 +110,10 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
                         if (!beaconsSeen.contains(beacon)) {
                             beaconsSeen.add(beacon);
                             logToDisplay("The first beacon " + beacon.toString() + " is about " + beacon.getDistance() + " meters away.");
+
+                            // Call API enter method
+                            String enter_path = "https://hpf-usersprofileapp.azurewebsites.net/api/DeviceEntered?code=gkfCTWaqHdsV2aaL8mr8kq6STFt8bygg22AAZk7g1JW7vTZ035En5A==";
+                            new ExecuteTask().execute("enter", enter_path);
                         }
                     }
                 }
@@ -126,5 +139,89 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
                 listView.setSelection(adapter.getCount() - 1);
             }
         });
+    }
+
+    class ExecuteTask extends AsyncTask<String, Integer, String> //params, progress, result
+    {
+        String path_type = "";
+        @Override
+        protected String doInBackground(String... params) {
+            path_type = params[0];
+            String res = PostData(params);
+            return res;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            // This method has access to UI thread
+            String abc = result;
+
+            if (abc == "200" )
+            {
+                if(path_type == "enter") {
+                    logToDisplay("API: Device Enter");
+                }
+                else if(path_type == "exit") {
+                    logToDisplay("API: Device Exit");
+                }
+            }
+            else
+            {
+                logToDisplay("API: Unable to connect");
+            }
+        }
+    }
+
+    public String PostData(String[] values) {
+        String s = "";
+
+        try
+        {
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpPost httpPost = new HttpPost(values[1]);
+
+            //List<NameValuePair> list = new ArrayList<NameValuePair>();
+            //list.add(new BasicNameValuePair("name", values[0]));
+            //list.add(new BasicNameValuePair("pass",values[1]));
+            //httpPost.setEntity(new UrlEncodedFormEntity(list));
+
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+
+            HttpEntity httpEntity = httpResponse.getEntity();
+            s = readResponse(httpResponse);
+        }
+        catch(Exception exception) {}
+        return s;
+    }
+
+    public String readResponse(HttpResponse res) {
+        String return_text = "";
+
+//        InputStream is = null;
+
+//        try {
+//            is = res.getEntity().getContent();
+//            BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(is));
+//            String line = "";
+//            StringBuffer sb = new StringBuffer();
+//            while ((line = bufferedReader.readLine())!=null)
+//            {
+//                sb.append(line);
+//            }
+//            return_text = sb.toString();
+//        } catch (Exception e)
+//        {
+//
+//        }
+
+        try {
+            int statusCode = res.getStatusLine().getStatusCode();
+            if(statusCode == 200)
+                return_text = "200";
+        }
+        catch (Exception e) {
+
+        }
+        return return_text;
     }
 }
