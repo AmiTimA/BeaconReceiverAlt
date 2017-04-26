@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
                 beaconsSeen.clear();
 
                 // Call API exit method
-                String exit_path = "https://hpf-usersprofileapp.azurewebsites.net/api/DeviceExited?code=Q5hypKigjgiW8dwPEtJnRhTEUzEJgV5gVtWemLs8dgI6pRzvjSAUrw==";
+                String exit_path = getString(R.string.api_exit_path);
                 new ExecuteTask().execute("exit", exit_path);
             }
 
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer{
                             logToDisplay("The first beacon " + beacon.toString() + " is about " + beacon.getDistance() + " meters away.");
 
                             // Call API enter method
-                            String enter_path = "https://hpf-usersprofileapp.azurewebsites.net/api/DeviceEntered?code=gkfCTWaqHdsV2aaL8mr8kq6STFt8bygg22AAZk7g1JW7vTZ035En5A==";
+                            String enter_path = getString(R.string.api_enter_path);
                             new ExecuteTask().execute("enter", enter_path);
                         }
                     }
